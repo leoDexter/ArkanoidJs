@@ -1,0 +1,38 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Teko", sans-serif;
+    font-size: 32px;
+}
+#gameScreen {
+    border: 1px solid rgba(0, 128, 0, 0.959);
+    background: url(./assets/canvasBG.jpg);
+}
+.gameRunning {
+    border: 1px solid green;
+    background-color: lightgreen;
+}
+.gamePaused {
+    border: 1px solid red;
+    background-color: darkgray;
+}
+
+.gameScreen {
+    grid-area: game;
+}
+.mathDetails {
+    grid-area: details;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-areas: "game game details details";
+    grid-gap: 5px;
+    background-color: #2196f3;
+}
+
+.grid-container > div {
+    background-color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    padding: 5px 0;    
+}

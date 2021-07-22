@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arkanoid JS</title>
+    <script src="ArkanoidJS.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="grid-container">
+        <img id="scream" src="./assets//heart.png" alt="The Scream" style="visibility: hidden;" >
+        <div class="gameScreen">
+            <canvas id="gameScreen" width="500" height="800px"></canvas>
+        </div>
+        <div class="mathDetails">
+            <span>Detalhes:</span>
+            <div>
+                <label>ângulo de colisão</label>
+                <input id="colisionAngle">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let canvas = document.querySelector('#gameScreen');
+        let game = new Game(canvas);
+        document.addEventListener("keydown", (event) =>
+        {
+            // Espaço: solta a bola
+            if (event.keyCode === 32)
+                game.start({ onHit: OnHit });
+            // P: Pausa e despausa
+            if (event.keyCode === 80)
+                game.pause();
+            if (event.keyCode === 37)
+                game.movePaddleLeft();
+            if (event.keyCode === 39)
+                game.movePaddleRight();
+        });
+        document.addEventListener("keyup", (event) =>
+        {
+            game.stopPaddle();
+        });
+
+        function OnHit(args)
+        {
+            console.clear();
+            console.table(args.paddle);
+            delete args.paddle;
+            console.table(args);
+        }
+    </script>
+</body>
+
+</html>
