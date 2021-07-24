@@ -2,12 +2,17 @@ body {
     margin: 0;
     padding: 0;
     font-family: "Teko", sans-serif;
-    font-size: 32px;
+    font-size: 32px;    
 }
-#gameScreen {
+#gameScreen {    
     border: 1px solid rgba(0, 128, 0, 0.959);
-    background: url(./assets/canvasBG.jpg);
+    background: url(./assets/canvasBG.jpg);    
 }
+
+canvas{
+    height: 90vh;
+}
+
 .gameRunning {
     border: 1px solid green;
     background-color: lightgreen;
@@ -26,9 +31,8 @@ body {
 
 .grid-container {
     display: grid;
-    grid-template-areas: "game game details details";
-    grid-gap: 5px;
-    background-color: #2196f3;
+    grid-template-areas: "game game";
+    grid-gap: 5px;    
 }
 
 .grid-container > div {

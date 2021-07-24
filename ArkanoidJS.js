@@ -2,6 +2,7 @@ class Game
 {
     constructor(canvasEl, window)
     {
+        canvasEl.height = window.screen.height;
         this.lifes = 3;
         this.window = window;
         this.canvas = canvasEl;
@@ -11,35 +12,34 @@ class Game
         this.movingPaddleRight = false;
 
         this.screen = new Screen(this.canvas.getContext('2d'));
-        this.ball = new Ball(this.canvas.width / 2, this.canvas.height - 30, 10);
-        this.paddle = new Paddle(this.canvas.width / 2, this.canvas.height - 10, this.ball);
+        this.ball = new Ball(10);
+        this.paddle = new Paddle();
+
+        this.ball.lost_life = () =>
+        {
+            this.lifes = game.lifes - 1;
+            this.playing = false;
+            this.initElements();
+        };
+
         this.screen.addPaddle(this.paddle);
         this.screen.addBall(this.ball);
-        this.level = new Level(this.ball, 1).levelFactory();
-        this.level.bricks.forEach((brick) => this.screen.addBrick(brick));
+        this.screen.setLevel(new Level(this.canvas.width).getNextLevel().getNextLevel().getNextLevel());
 
         this.initElements();
         this.render();
     }
 
-    initElements()
+    initElements = () =>
     {
-        var game = this;
+        this.ball.setPositionX(this.canvas.width / 2);
+        this.ball.setPositionY(this.canvas.height - 30 - this.ball.radius);
 
-        game.ball.lost_life = function ()
-        {
-            game.ball = new Ball(game.canvas.width / 2, game.canvas.height - 30, 10);
-            game.paddle = new Paddle(game.canvas.width / 2, game.canvas.height - 10, game.ball);
-            game.screen.addPaddle(game.paddle);
-            game.screen.addBall(game.ball);
-            game.level.ball = game.ball;
-
-            game.lifes = game.lifes - 1;
-            game.playing = false;
-        };
+        this.paddle.setPositionX(this.canvas.width / 2 - this.paddle.width / 2);
+        this.paddle.setPositionY(this.canvas.height - 30);
     }
 
-    start(options)
+    start()
     {
         this.canvas.classList.add('gameRunning');
         this.playing = true;
@@ -69,6 +69,9 @@ class Game
             that.screen.draw();
             that.render();
             that.drawStatistics(that.screen.context);
+            let won = that.screen.level.bricks.filter(b => !b.destroyed).length == 0;
+            if (won)
+                that.screen.setLevel(that.screen.level.getNextLevel(that.canvas.width));
 
         });
     }
@@ -104,7 +107,7 @@ class Game
 
     drawStatistics(canvasContext)
     {
-        let point = this.level.bricks.filter(b => b.destroyed).length * 100;
+        let point = this.screen.level.bricks.filter(b => b.destroyed).length * 100;
         canvasContext.font = "30px Arial";
         canvasContext.fillStyle = "#fff";
         canvasContext.fillText(point, 10, 30);
@@ -123,7 +126,7 @@ class Screen
     constructor(canvasContext)
     {
         this.context = canvasContext;
-        this.screenElements = [];
+        this.level = {};
         this.paddle = {};
         this.ball = {};
     }
@@ -132,18 +135,17 @@ class Screen
     {
         this.context.clearRect(0, 0, canvas.width, canvas.height);
         this.ball.drawSelf(this.context);
-        this.paddle.drawSelf(this.context);
-        this.screenElements.forEach((element) =>
+        this.paddle.drawSelf(this.context, this.ball);
+        this.level.bricks.forEach((element) =>
         {
-            element.ball = this.ball;
             if (!element.destroyed)
-                element.drawSelf(this.context)
+                element.drawSelf(this.context, this.ball);
         });
     }
 
-    addBrick(_element)
+    setLevel(level)
     {
-        this.screenElements.push(_element);
+        this.level = level;
     }
 
     addBall(_element)
@@ -159,55 +161,49 @@ class Screen
 
 class Paddle
 {
-    deltaX = 5;
-    constructor(initialX, InitialY, ball)
+    constructor(initialX, InitialY)
     {
-        this.identifier = 'paddle';
+        this.deltaX = 5;
         this.width = 100;
         this.height = 20;
-        this.ScreenPosition = new ScreenPosition(initialX - this.width / 2, InitialY - this.height);
-        this.ball = ball;
+        this.ScreenPosition = new ScreenPosition(0, 0);
     }
 
-    drawSelf(canvasContext)
+    drawSelf(canvasContext, ball)
     {
-        if (this.ball.ScreenPosition.yPosition + this.ball.radius > this.ScreenPosition.yPosition &&
-            this.ball.ScreenPosition.xPosition >= this.ScreenPosition.xPosition &&
-            this.ball.ScreenPosition.xPosition <= (this.ScreenPosition.xPosition + this.width))
+        if (ball.ScreenPosition.yPosition + ball.radius > this.ScreenPosition.yPosition &&
+            ball.ScreenPosition.xPosition >= this.ScreenPosition.xPosition &&
+            ball.ScreenPosition.xPosition <= (this.ScreenPosition.xPosition + this.width))
         {
-            let colisionPoint = this.ball.ScreenPosition.xPosition - (this.ScreenPosition.xPosition + this.width / 2);
+            let colisionPoint = ball.ScreenPosition.xPosition - (this.ScreenPosition.xPosition + this.width / 2);
             colisionPoint = colisionPoint / (this.width / 2);
 
             let angle = colisionPoint * (Math.PI / 3);
-            this.ball.setDeltaY(-Math.cos(angle));
-            this.ball.setDeltaX(Math.sin(angle));
+            ball.setDeltaY(-Math.cos(angle));
+            ball.setDeltaX(Math.sin(angle));
         }
 
         canvasContext.fillStyle = "#223548";
-        canvasContext.fillRect(
-            this.ScreenPosition.xPosition,
-            this.ScreenPosition.yPosition,
-            this.width, this.height);
+        canvasContext.fillRect(this.ScreenPosition.xPosition, this.ScreenPosition.yPosition, this.width, this.height);
 
         canvasContext.strokeStyle = "#ffcd85";
-        canvasContext.strokeRect(
-            this.ScreenPosition.xPosition,
-            this.ScreenPosition.yPosition,
-            this.width, this.height);
+        canvasContext.strokeRect(this.ScreenPosition.xPosition, this.ScreenPosition.yPosition, this.width, this.height);
     }
 
     moveLeft(limitLeft)
     {
         if (this.ScreenPosition.xPosition - this.deltaX >= limitLeft)
-            this.ScreenPosition.xPosition -= this.deltaX;
+            this.setPositionX(this.ScreenPosition.xPosition - this.deltaX);
     }
+
     moveRight(limitRight)
     {
         if (this.ScreenPosition.xPosition + this.width + this.deltaX <= limitRight)
-            this.ScreenPosition.xPosition += this.deltaX;
+            this.setPositionX(this.ScreenPosition.xPosition + this.deltaX);
     }
-    increaseLife() { }
-    decreaseLife() { }
+
+    setPositionX = (x) => this.ScreenPosition.xPosition = x;
+    setPositionY = (y) => this.ScreenPosition.yPosition = y;
 }
 
 class ScreenPosition
@@ -221,26 +217,19 @@ class ScreenPosition
 
 class Ball
 {
-    constructor(initialX, InitialY, radius)
+    constructor(radius)
     {
         this.deltaX = 5;
         this.deltaY = -5;
-        this.identifier = 'ball';
         this.speed = 5;
         this.radius = radius;
-        this.ScreenPosition = new ScreenPosition(initialX, InitialY - radius);
+        this.ScreenPosition = new ScreenPosition(0, 0);
     }
 
     drawSelf(canvasContext)
     {
         canvasContext.beginPath();
-        canvasContext.arc(
-            (this.ScreenPosition.xPosition),
-            (this.ScreenPosition.yPosition),
-            (this.radius),
-            0,
-            (Math.PI * 2)
-        );
+        canvasContext.arc((this.ScreenPosition.xPosition), (this.ScreenPosition.yPosition), (this.radius), 0, (Math.PI * 2));
         canvasContext.fillStyle = "red";
         canvasContext.fill();
 
@@ -267,93 +256,149 @@ class Ball
 
     }
 
-    setDeltaX(angle)
-    {
-        this.deltaX = angle * this.speed;
-    }
+    setDeltaX = (angle) => this.deltaX = angle * this.speed;
 
-    setDeltaY(angle)
-    {
-        this.deltaY = angle * this.speed;
-    }
+    setDeltaY = (angle) => this.deltaY = angle * this.speed;
 
-    setPositionX(x)
-    {
-        this.ScreenPosition.xPosition = x;
-    }
+    setPositionX = (x) => this.ScreenPosition.xPosition = x;
+
+    setPositionY = (y) => this.ScreenPosition.yPosition = y;
 }
 
 class Brick
 {
-    deltaX = 0;
-    constructor(initialX, InitialY, ball)
+    constructor()
     {
-        this.identifier = 'brick' + Date.now();
+        this.lifes = 1;
         this.width = 50;
         this.height = 20;
-        this.ball = ball;
         this.destroyed = false;
-        this.ScreenPosition = new ScreenPosition(initialX, InitialY + this.height);
+        this.ScreenPosition = new ScreenPosition(0, 0 + this.height);
     }
 
-    drawSelf(canvasContext)
+    drawSelf(canvasContext, ball)
     {
-        if (this.ball.ScreenPosition.yPosition + this.ball.radius >= this.ScreenPosition.yPosition
-            && this.ball.ScreenPosition.yPosition <= this.ScreenPosition.yPosition + this.height
-            &&
-            this.ball.ScreenPosition.xPosition >= this.ScreenPosition.xPosition
-            &&
-            this.ball.ScreenPosition.xPosition <= (this.ScreenPosition.xPosition + this.width))
+        if (ball.ScreenPosition.yPosition + ball.radius >= this.ScreenPosition.yPosition &&
+            ball.ScreenPosition.yPosition <= this.ScreenPosition.yPosition + this.height &&
+            ball.ScreenPosition.xPosition >= this.ScreenPosition.xPosition &&
+            ball.ScreenPosition.xPosition <= (this.ScreenPosition.xPosition + this.width))
         {
-            this.destroyed = true;
-            this.ball.deltaY = -this.ball.deltaY;
+            this.lifes--;
+            this.destroyed = this.lifes == 0;
+            ball.deltaY = -ball.deltaY;
         }
 
-        canvasContext.fillStyle = "#9e9595";
-        canvasContext.fillRect(
-            this.ScreenPosition.xPosition,
-            this.ScreenPosition.yPosition,
-            this.width, this.height);
+        canvasContext.fillStyle = this.lifes == 1 ? "#9e9595" : this.lifes == 2 ? "#008000" : "#ca0c52";
+        canvasContext.fillRect(this.ScreenPosition.xPosition, this.ScreenPosition.yPosition, this.width, this.height);
 
-        canvasContext.strokeStyle = "#ffcd85";
-        canvasContext.strokeRect(
-            this.ScreenPosition.xPosition,
-            this.ScreenPosition.yPosition,
-            this.width, this.height);
 
+        canvasContext.strokeRect(this.ScreenPosition.xPosition, this.ScreenPosition.yPosition, this.width, this.height);
     }
+
+    setTotalLife = (l) => this.lifes = l;
+    setPositionX = (x) => this.ScreenPosition.xPosition = x;
+    setPositionY = (y) => this.ScreenPosition.yPosition = y;
 }
 
 class Level
 {
-    constructor(ball, levelNumber = 1)
+    constructor(screenWidth)
     {
-        this.levelNumber = levelNumber;
+        this.levelNumber = 0;
         this.bricks = [];
-        this.ball = ball
+        this.screenWidth = screenWidth;
     }
 
-    levelFactory = () =>
+    getNextLevel = () =>
     {
-        if (this.levelNumber == 1)
+        this.levelNumber++;
+        this.bricks = [];
+        if (this.levelNumber === 1)
         {
             let lines = 3;
             while (lines > 0)
             {
                 for (let index = 0; index < 8; index++)
                 {
-                    let brick = new Brick(0, 0, this.ball);
-                    brick.ScreenPosition.xPosition = (brick.width * index + brick.width)
-                    brick.ScreenPosition.yPosition = (brick.height * lines) + 300;
+                    let brick = new Brick();
+                    brick.setPositionX(brick.width * index + brick.width)
+                    brick.setPositionY(brick.height * lines + 50);
                     this.bricks.push(brick);
                 }
-
                 lines--;
+            }
+        }
+
+        if (this.levelNumber === 2)
+        {
+            let lines = 3;
+            while (lines > 0)
+            {
+                for (let index = 0; index < 8; index++)
+                {
+                    let brick = new Brick();
+                    brick.setPositionX(brick.width * index + brick.width)
+                    brick.setPositionY(brick.height * lines + 50);
+                    brick.setTotalLife(this.getRandomIntInclusive(1, 3));
+                    this.bricks.push(brick);
+                }
+                lines--;
+            }
+
+            for (let index = 0; index < 8; index++)
+            {
+                let brick = new Brick();
+                brick.setPositionX(index * brick.width)
+                brick.setPositionY(500);
+                brick.setTotalLife(3);
+                this.bricks.push(brick);
+            }
+        }
+
+        if (this.levelNumber === 3)
+        {
+            let lines = 3;
+            while (lines > 0)
+            {
+                for (let index = 0; index < 8; index++)
+                {
+                    let brick = new Brick(0, 0);
+                    brick.setPositionX(brick.width * index + brick.width)
+                    brick.setPositionY(brick.height * lines + 50);
+                    brick.setTotalLife(this.getRandomIntInclusive(1, 3));
+                    this.bricks.push(brick);
+                }
+                lines--;
+            }
+
+            for (let index = 8; index >= 0; index--)
+            {
+                let brick = new Brick();
+                brick.setPositionX(this.screenWidth - index * brick.width)
+                brick.setPositionY(300);
+                brick.setTotalLife(3);
+                this.bricks.push(brick);
+            }
+
+            for (let index = 0; index < 8; index++)
+            {
+                let brick = new Brick();
+                brick.setPositionX(index * brick.width)
+                brick.setPositionY(500);
+                brick.setTotalLife(3);
+                this.bricks.push(brick);
             }
 
         }
 
         return this;
+    }
+
+    getRandomIntInclusive(min, max)
+    {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
 

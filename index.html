@@ -14,47 +14,26 @@
 
 <body>
     <div class="grid-container">
-        <img id="scream" src="./assets//heart.png" alt="The Scream" style="visibility: hidden;" >
+        <img id="scream" src="./assets//heart.png" alt="The Scream" style="visibility: hidden;">
         <div class="gameScreen">
-            <canvas id="gameScreen" width="500" height="800px"></canvas>
-        </div>
-        <div class="mathDetails">
-            <span>Detalhes:</span>
-            <div>
-                <label>ângulo de colisão</label>
-                <input id="colisionAngle">
-            </div>
+            <!-- width="500" height="600px" -->
+            <canvas id="gameScreen" width="500" height="600"></canvas>
         </div>
     </div>
 
     <script>
         let canvas = document.querySelector('#gameScreen');
-        let game = new Game(canvas);
+        let game = new Game(canvas, window);
         document.addEventListener("keydown", (event) =>
         {
-            // Espaço: solta a bola
-            if (event.keyCode === 32)
-                game.start({ onHit: OnHit });
-            // P: Pausa e despausa
-            if (event.keyCode === 80)
-                game.pause();
-            if (event.keyCode === 37)
-                game.movePaddleLeft();
-            if (event.keyCode === 39)
-                game.movePaddleRight();
+            if (event.keyCode === 32) game.start();
+            if (event.keyCode === 80) game.pause();
+            if (event.keyCode === 37) game.movePaddleLeft();
+            if (event.keyCode === 39) game.movePaddleRight();
         });
-        document.addEventListener("keyup", (event) =>
-        {
-            game.stopPaddle();
-        });
+        document.addEventListener("keyup", (event) => { game.stopPaddle(); });
 
-        function OnHit(args)
-        {
-            console.clear();
-            console.table(args.paddle);
-            delete args.paddle;
-            console.table(args);
-        }
+
     </script>
 </body>
 
