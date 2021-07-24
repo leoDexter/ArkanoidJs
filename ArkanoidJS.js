@@ -24,7 +24,7 @@ class Game
 
         this.screen.addPaddle(this.paddle);
         this.screen.addBall(this.ball);
-        this.screen.setLevel(new Level(this.canvas.width).getNextLevel().getNextLevel().getNextLevel());
+        this.screen.setLevel(new Level(this.canvas.width).getNextLevel());
 
         this.initElements();
         this.render();
