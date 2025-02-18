@@ -27,7 +27,7 @@ jobs:
    runs-on: ubuntu-latest
    steps:
      - name: mensagem
-       run: echo secret [MY_BE_API_KEY] ${{secrets.MY_BE_API_KEY}}
+       run: echo secret [MY_REPO_SECRET] ${{secrets.MY_REPO_SECRET}}
   deploy:
     needs: checkout
     environment:
