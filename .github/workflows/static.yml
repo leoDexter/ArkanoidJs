@@ -24,12 +24,10 @@ concurrency:
 jobs:
   # Single deploy job since we're just deploying
   checkout:
-   environment:
-      name: github-pages
-   runs-on: ubuntu-latest
-   steps:
-     - name: mensagem
-       run: echo secret [MY_BE_API_KEY] ${{secrets.MY_BE_API_KEY}}
+    uses: leoDexter/pipeline-template/.github/workflows/process.yml@main
+    with: 
+      backend-url: http://arkanoidhtml.com/api
+  
   deploy:
     needs: checkout
     environment:
