@@ -26,7 +26,7 @@ jobs:
   checkout:
     uses: leoDexter/pipeline-template/.github/workflows/process.yml@main
     with: 
-      backend-url: http://arkanoidhtml.com/api
+      backend-url: "http://arkanoidhtml.com/api"
   
   deploy:
     needs: checkout
